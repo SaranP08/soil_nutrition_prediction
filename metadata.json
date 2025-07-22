@@ -1,0 +1,5 @@
+{
+  "name": "Soil Nutrient Advisor",
+  "description": "An application that takes soil data from a CSV file, predicts nutrient levels (pH, N, P, K, OC), and provides AI-powered recommendations to improve soil health for better crop yields.",
+  "requestFramePermissions": []
+}
