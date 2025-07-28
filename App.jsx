@@ -10,7 +10,8 @@ import Chat from "./components/Chat.jsx";
 import TabButton from "./components/TabButton.jsx";
 import FileUpload from "./components/FileUpload.jsx";
 import { LeafIcon, LightBulbIcon, ArrowPathIcon } from "./components/Icons.jsx";
-import { ReportsContext } from "./context/ReportsContext.js";
+import PdfDownloadButton from "./components/PdfDownloadButton";
+import NDVIChart from "./components/NDVIChart";
 
 const App = () => {
   const [activeTab, setActiveTab] = useState("predict");
@@ -107,6 +108,8 @@ const App = () => {
             new Date(row.date)
           );
 
+          const ndviData = featureData.ndviData || [];
+
           const values = await runPrediction(selectedNutrients, featureData);
 
           const predictions = selectedNutrients.map((nutrient) => {
@@ -118,7 +121,10 @@ const App = () => {
           const finalPredictions = await Promise.all(
             predictions.map((p) =>
               getAiRecommendation(p.nutrient, p.value, p.status).then(
-                (rec) => ({ ...p, recommendation: rec })
+                (rec) => ({
+                  ...p,
+                  recommendation: rec,
+                })
               )
             )
           );
@@ -126,14 +132,26 @@ const App = () => {
           setReports((prev) =>
             prev.map((r, idx) =>
               i === idx
-                ? { ...r, predictions: finalPredictions, isProcessing: false }
+                ? {
+                    ...r,
+                    predictions: finalPredictions,
+                    isProcessing: false,
+                    ndviData: ndviData,
+                  }
                 : r
             )
           );
-        } catch (e) {
+        } catch (innerError) {
+          console.error(`Error processing row ${i + 1}:`, innerError.message);
           setReports((prev) =>
             prev.map((r, idx) =>
-              i === idx ? { ...r, error: e.message, isProcessing: false } : r
+              i === idx
+                ? {
+                    ...r,
+                    predictions: [],
+                    isProcessing: false,
+                  }
+                : r
             )
           );
         }
@@ -326,7 +344,12 @@ const App = () => {
                   Your Soil Report
                 </h2>
                 {reports.map((report, index) => (
-                  <ReportCard key={index} report={report} />
+                  <ReportCard
+                    key={index}
+                    location={report.location}
+                    predictions={report.predictions}
+                    ndviData={report.ndviData}
+                  />
                 ))}
               </div>
             ) : (
