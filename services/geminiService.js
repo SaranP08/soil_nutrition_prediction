@@ -1,9 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { RECOMMENDATION_RULES, NUTRIENT_FULL_NAMES } from "../constants.js";
+require("dotenv").config();
 
 // --- IMPORTANT ---
 // To run this locally, replace "YOUR_API_KEY_HERE" with your actual Google Gemini API key.
-const apiKey = "AIzaSyAex1h9OKkdDfSf79FYFLLcTqHqo0CBWnE";
+const apiKey = process.env.API_KEY;
 
 if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
   console.warn(
