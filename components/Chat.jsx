@@ -6,7 +6,7 @@ const Chat = () => {
   const [messages, setMessages] = useState([
     {
       sender: "ai",
-      text: "Hello! I'm your AI agronomist. How can I help you with your soil questions today?",
+      text: "Hello! I'm your AI agronomist. How can I help you with your soil questions today ?????",
     },
   ]);
   const [input, setInput] = useState("");
