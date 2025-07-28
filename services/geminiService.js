@@ -14,6 +14,30 @@ if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
 const ai = new GoogleGenAI({ apiKey });
 const model = "gemini-2.5-flash";
 
+function isSoilRelatedQuestion(message) {
+  const allowedKeywords = [
+    "soil",
+    "nutrient",
+    "fertility",
+    "ph",
+    "nitrogen",
+    "phosphorus",
+    "potassium",
+    "organic carbon",
+    "crop rotation",
+    "cover crop",
+    "fertilizer",
+    "compost",
+    "agriculture",
+    "agronomy",
+    "farm",
+    "land",
+    "amendments",
+  ];
+  const lower = message.toLowerCase();
+  return allowedKeywords.some((keyword) => lower.includes(keyword));
+}
+
 export async function getAiRecommendation(nutrient, value, status) {
   if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
     return "AI recommendations are disabled. Please configure your API key to use this feature.";
@@ -76,14 +100,21 @@ export async function continueChat(chatSession, message) {
     };
   }
 
+  if (!isSoilRelatedQuestion(message)) {
+    return {
+      chatSession: null,
+      responseText:
+        "Sorry, I can only answer questions related to soil nutrients, crop health, and agronomy. Please ask a soil-related question.",
+    };
+  }
+
   let session = chatSession;
   if (!session) {
-    // Start a new chat session if one doesn't exist
     session = ai.chats.create({
       model: model,
       config: {
         systemInstruction:
-          "You are a friendly and knowledgeable agronomist and soil scientist. Help users with their questions about soil health, crop management, and interpreting soil test results. Provide practical, actionable advice. Keep your answers concise and easy to understand.",
+          "You are a friendly and knowledgeable agronomist and soil scientist. ONLY answer questions strictly related to soil health, soil nutrients, agronomy, crop nutrition, and farm practices. Politely refuse to answer any other topic including coding, general knowledge, or non-agriculture topics.",
       },
     });
   }
