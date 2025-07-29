@@ -12,6 +12,7 @@ import FileUpload from "./components/FileUpload.jsx";
 import { LeafIcon, LightBulbIcon, ArrowPathIcon } from "./components/Icons.jsx";
 import PdfDownloadButton from "./components/PdfDownloadButton";
 import NDVIChart from "./components/NDVIChart";
+import { fetchNdviTimeSeries } from "./services/ndviTimeSeries.js";
 
 const App = () => {
   const [activeTab, setActiveTab] = useState("predict");
@@ -40,6 +41,7 @@ const App = () => {
       setError("Please upload a CSV file.");
       return;
     }
+
     if (selectedNutrients.length === 0) {
       setError("Please select at least one nutrient.");
       return;
@@ -86,6 +88,7 @@ const App = () => {
         })),
         isProcessing: true,
       }));
+
       setReports(initialReports);
       setActiveTab("report");
 
@@ -108,7 +111,11 @@ const App = () => {
             new Date(row.date)
           );
 
-          const ndviData = featureData.ndviData || [];
+          const ndviData = await fetchNdviTimeSeries(
+            lat,
+            lon,
+            new Date(row.date)
+          );
 
           const values = await runPrediction(selectedNutrients, featureData);
 

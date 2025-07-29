@@ -24,6 +24,7 @@ export async function runPrediction(nutrients, data) {
     }
 
     const result = await response.json(); // returns { N: val1, P: val2, ... }
+    console.log(result);
     return result;
   } catch (e) {
     console.error(`Failed to fetch prediction:`, e);
