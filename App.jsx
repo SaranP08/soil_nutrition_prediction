@@ -6,7 +6,6 @@ import { getStatusForValue, parseCsv } from "./lib/utils.js";
 import { fetchSentinel2Data } from "./services/earthEngineService.js";
 import NutrientSelector from "./components/NutrientSelector.jsx";
 import ReportCard from "./components/ReportCard.jsx";
-import Chat from "./components/Chat.jsx";
 import TabButton from "./components/TabButton.jsx";
 import FileUpload from "./components/FileUpload.jsx";
 import { LeafIcon, LightBulbIcon, ArrowPathIcon } from "./components/Icons.jsx";
@@ -18,7 +17,7 @@ const App = () => {
   const [activeTab, setActiveTab] = useState("predict");
   const [selectedNutrients, setSelectedNutrients] = useState([Nutrient.pH]);
   const [uploadedFile, setUploadedFile] = useState(null);
-  const [inputMethod, setInputMethod] = useState("upload"); // "upload" | "auto" | "manual"
+  const [inputMethod, setInputMethod] = useState("upload");
   const [manualLocation, setManualLocation] = useState({
     latitude: "",
     longitude: "",
@@ -340,8 +339,6 @@ const App = () => {
             )}
           </>
         );
-      case "chat":
-        return <Chat reports={reports} />;
       case "report":
         return (
           <div>
@@ -372,6 +369,8 @@ const App = () => {
             )}
           </div>
         );
+      default:
+        return null;
     }
   };
 
@@ -398,11 +397,6 @@ const App = () => {
                 label="Predict Nutrients"
                 isActive={activeTab === "predict"}
                 onClick={() => setActiveTab("predict")}
-              />
-              <TabButton
-                label="Chat With Us"
-                isActive={activeTab === "chat"}
-                onClick={() => setActiveTab("chat")}
               />
               <TabButton
                 label="Soil Report"
