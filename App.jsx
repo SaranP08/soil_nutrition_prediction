@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
-import { AVAILABLE_NUTRIENTS, Nutrient } from "./constants.js";
-import { getAiRecommendation } from "./services/geminiService.js";
+// AFTER (This is the fix)
+import { AVAILABLE_NUTRIENTS, Nutrient } from "./constants.jsx";
 import { runPrediction } from "./services/modelService.js";
 import { getStatusForValue, parseCsv } from "./lib/utils.js";
 import { fetchSentinel2Data } from "./services/earthEngineService.js";
@@ -121,26 +121,19 @@ const App = () => {
           const predictions = selectedNutrients.map((nutrient) => {
             const value = values[nutrient];
             const status = getStatusForValue(nutrient, value);
+            // Recommendation is kept as an empty string, AI call is removed.
             return { nutrient, value, status, recommendation: "" };
           });
 
-          const finalPredictions = await Promise.all(
-            predictions.map((p) =>
-              getAiRecommendation(p.nutrient, p.value, p.status).then(
-                (rec) => ({
-                  ...p,
-                  recommendation: rec,
-                })
-              )
-            )
-          );
+          // The block for getAiRecommendation was here and has been removed.
+          // We will now use the `predictions` array directly.
 
           setReports((prev) =>
             prev.map((r, idx) =>
               i === idx
                 ? {
                     ...r,
-                    predictions: finalPredictions,
+                    predictions: predictions, // Use predictions directly without AI recommendations
                     isProcessing: false,
                     ndviData: ndviData,
                   }

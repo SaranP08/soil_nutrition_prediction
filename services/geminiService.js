@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { RECOMMENDATION_RULES, NUTRIENT_FULL_NAMES } from "../constants.js";
+import { RECOMMENDATION_RULES, NUTRIENT_FULL_NAMES } from "../constants.jsx";
 
 // --- IMPORTANT ---
 // To run this locally, replace "YOUR_API_KEY_HERE" with your actual Google Gemini API key.
