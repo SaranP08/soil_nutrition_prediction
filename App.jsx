@@ -73,19 +73,18 @@ const App = () => {
         throw new Error("No valid data found.");
       }
 
+      // --- CHANGE IS HERE ---
+      // Initialize reports with an empty predictions array and isProcessing flag.
+      // This prevents the UI from trying to render cards with 0.0 values.
       const initialReports = parsedData.map((row) => ({
         location: {
           latitude: parseFloat(row.latitude),
           longitude: parseFloat(row.longitude),
           date: row.date,
         },
-        predictions: selectedNutrients.map((nutrient) => ({
-          nutrient,
-          value: 0,
-          status: "low",
-          recommendation: "",
-        })),
+        predictions: [], // Initializing with an empty array
         isProcessing: true,
+        error: null,
       }));
 
       setReports(initialReports);
@@ -121,19 +120,16 @@ const App = () => {
           const predictions = selectedNutrients.map((nutrient) => {
             const value = values[nutrient];
             const status = getStatusForValue(nutrient, value);
-            return { nutrient, value, status, recommendation: "" };
+            return { nutrient, value, status };
           });
-
-          // --- AI RECOMMENDATION BLOCK REMOVED ---
-          // The `predictions` array is now the final data.
 
           setReports((prev) =>
             prev.map((r, idx) =>
               i === idx
                 ? {
                     ...r,
-                    predictions: predictions, // Use predictions directly
-                    isProcessing: false,
+                    predictions: predictions,
+                    isProcessing: false, // Turn off processing flag for this report
                     ndviData: ndviData,
                   }
                 : r
@@ -148,6 +144,7 @@ const App = () => {
                     ...r,
                     predictions: [],
                     isProcessing: false,
+                    error: innerError.message, // Pass error to the card
                   }
                 : r
             )
