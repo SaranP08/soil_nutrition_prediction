@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from "react";
 import { AVAILABLE_NUTRIENTS, Nutrient } from "./constants.jsx";
-// import { getAiRecommendation } from "./services/geminiService.js"; // AI import removed
 import { runPrediction } from "./services/modelService.js";
 import { getStatusForValue, parseCsv } from "./lib/utils.js";
 import { fetchSentinel2Data } from "./services/earthEngineService.js";
@@ -9,8 +8,6 @@ import ReportCard from "./components/ReportCard.jsx";
 import TabButton from "./components/TabButton.jsx";
 import FileUpload from "./components/FileUpload.jsx";
 import { LeafIcon, LightBulbIcon, ArrowPathIcon } from "./components/Icons.jsx";
-import PdfDownloadButton from "./components/PdfDownloadButton";
-import NDVIChart from "./components/NDVIChart";
 import { fetchNdviTimeSeries } from "./services/ndviTimeSeries.js";
 
 const App = () => {
@@ -35,12 +32,74 @@ const App = () => {
     );
   };
 
+  // --- NEW HELPER FUNCTION TO CONTAIN THE LOOP ---
+  // This function will run after the initial loading state has been rendered.
+  const processReports = async (parsedData) => {
+    for (let i = 0; i < parsedData.length; i++) {
+      const row = parsedData[i];
+      try {
+        const lat = parseFloat(row.latitude);
+        const lon = parseFloat(row.longitude);
+        if (isNaN(lat) || isNaN(lon) || !row.date) {
+          throw new Error(
+            `Invalid data in row ${i + 1}: Check latitude, longitude, and date.`
+          );
+        }
+
+        const featureData = await fetchSentinel2Data(
+          lat,
+          lon,
+          new Date(row.date)
+        );
+        const ndviData = await fetchNdviTimeSeries(
+          lat,
+          lon,
+          new Date(row.date)
+        );
+        const values = await runPrediction(selectedNutrients, featureData);
+        const predictions = selectedNutrients.map((nutrient) => {
+          const value = values[nutrient];
+          const status = getStatusForValue(nutrient, value);
+          return { nutrient, value, status };
+        });
+
+        setReports((prev) =>
+          prev.map((r, idx) =>
+            i === idx
+              ? {
+                  ...r,
+                  predictions: predictions,
+                  isProcessing: false,
+                  ndviData: ndviData,
+                }
+              : r
+          )
+        );
+      } catch (innerError) {
+        console.error(`Error processing row ${i + 1}:`, innerError.message);
+        setReports((prev) =>
+          prev.map((r, idx) =>
+            i === idx
+              ? {
+                  ...r,
+                  predictions: [],
+                  isProcessing: false,
+                  error: innerError.message,
+                }
+              : r
+          )
+        );
+      }
+    }
+    // Set the global loading state to false after all reports are processed.
+    setIsLoading(false);
+  };
+
   const handlePredict = useCallback(async () => {
     if (inputMethod === "upload" && !uploadedFile) {
       setError("Please upload a CSV file.");
       return;
     }
-
     if (selectedNutrients.length === 0) {
       setError("Please select at least one nutrient.");
       return;
@@ -52,7 +111,6 @@ const App = () => {
 
     try {
       let parsedData = [];
-
       if (inputMethod === "upload") {
         parsedData = await parseCsv(uploadedFile);
       } else {
@@ -60,112 +118,49 @@ const App = () => {
         if (!latitude || !longitude || !date) {
           throw new Error("Please fill in latitude, longitude, and date.");
         }
-        parsedData = [
-          {
-            latitude,
-            longitude,
-            date,
-          },
-        ];
+        parsedData = [{ latitude, longitude, date }];
       }
 
       if (!parsedData || parsedData.length === 0) {
         throw new Error("No valid data found.");
       }
 
-      // --- CHANGE IS HERE ---
-      // Initialize reports with an empty predictions array and isProcessing flag.
-      // This prevents the UI from trying to render cards with 0.0 values.
       const initialReports = parsedData.map((row) => ({
         location: {
           latitude: parseFloat(row.latitude),
           longitude: parseFloat(row.longitude),
           date: row.date,
         },
-        predictions: [], // Initializing with an empty array
+        predictions: [],
         isProcessing: true,
         error: null,
       }));
 
+      // --- KEY CHANGE ---
+      // 1. Set the initial loading state for all reports.
       setReports(initialReports);
       setActiveTab("report");
 
-      for (let i = 0; i < parsedData.length; i++) {
-        const row = parsedData[i];
-        try {
-          const lat = parseFloat(row.latitude);
-          const lon = parseFloat(row.longitude);
-          if (isNaN(lat) || isNaN(lon) || !row.date) {
-            throw new Error(
-              `Invalid data in row ${
-                i + 1
-              }: Check latitude, longitude, and date.`
-            );
-          }
-
-          const featureData = await fetchSentinel2Data(
-            lat,
-            lon,
-            new Date(row.date)
-          );
-
-          const ndviData = await fetchNdviTimeSeries(
-            lat,
-            lon,
-            new Date(row.date)
-          );
-
-          const values = await runPrediction(selectedNutrients, featureData);
-
-          const predictions = selectedNutrients.map((nutrient) => {
-            const value = values[nutrient];
-            const status = getStatusForValue(nutrient, value);
-            return { nutrient, value, status };
-          });
-
-          setReports((prev) =>
-            prev.map((r, idx) =>
-              i === idx
-                ? {
-                    ...r,
-                    predictions: predictions,
-                    isProcessing: false, // Turn off processing flag for this report
-                    ndviData: ndviData,
-                  }
-                : r
-            )
-          );
-        } catch (innerError) {
-          console.error(`Error processing row ${i + 1}:`, innerError.message);
-          setReports((prev) =>
-            prev.map((r, idx) =>
-              i === idx
-                ? {
-                    ...r,
-                    predictions: [],
-                    isProcessing: false,
-                    error: innerError.message, // Pass error to the card
-                  }
-                : r
-            )
-          );
-        }
-      }
+      // 2. Call the processing function. We DON'T await it here.
+      // This lets React render the UI with the loading state first.
+      processReports(parsedData);
     } catch (e) {
       const errorMessage =
         e instanceof Error ? e.message : "An unknown error occurred.";
       console.error("Prediction failed:", errorMessage);
       setError(errorMessage);
+      setIsLoading(false); // Make sure to stop loading on initial error
       setActiveTab("predict");
-    } finally {
-      setIsLoading(false);
     }
+    // The finally block is removed from here because setIsLoading(false) is now inside processReports
   }, [selectedNutrients, uploadedFile, inputMethod, manualLocation]);
 
   const renderTabContent = () => {
+    // ... This function remains exactly the same
     switch (activeTab) {
       case "predict":
         return (
+          // This part remains unchanged
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
               <div className="space-y-6">
@@ -311,7 +306,7 @@ const App = () => {
                         Analyzing...
                       </>
                     ) : (
-                      "🔍 Get Predictions"
+                      "🔍 Predict & Advise"
                     )}
                   </button>
                 </div>
@@ -341,6 +336,8 @@ const App = () => {
                     key={index}
                     location={report.location}
                     predictions={report.predictions}
+                    isProcessing={report.isProcessing} // Pass the flag
+                    error={report.error} // Pass the error
                     ndviData={report.ndviData}
                   />
                 ))}
@@ -364,6 +361,7 @@ const App = () => {
   };
 
   return (
+    // ... This part remains exactly the same
     <div className="min-h-screen bg-gradient-to-br from-brand-blue-50 via-brand-blue-100 to-white text-gray-800 font-sans p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
         <header className="text-center mb-8">
@@ -374,8 +372,8 @@ const App = () => {
             </h1>
           </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Upload a CSV or provide your location to get instant soil nutrient
-            predictions for a healthier harvest.
+            Upload a CSV or provide your location to get instant predictions and
+            AI-powered recommendations for a healthier harvest.
           </p>
         </header>
 
