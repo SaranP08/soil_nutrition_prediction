@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { AVAILABLE_NUTRIENTS, Nutrient } from "./constants.js";
+import { AVAILABLE_NUTRIENTS, Nutrient } from "./constants.jsx";
 import { getAiRecommendation } from "./services/geminiService.js";
 import { runPrediction } from "./services/modelService.js";
 import { getStatusForValue, parseCsv } from "./lib/utils.js";
