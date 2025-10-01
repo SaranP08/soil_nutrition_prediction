@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import PredictionCard from "./PredictionCard.jsx";
 import { MapPinIcon, ArrowPathIcon } from "./Icons.jsx";
 import {
@@ -10,15 +10,15 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import html2pdf from "html2pdf.js";
 
+// This function geocodes coordinates to a city/country name for display
 const reverseGeocode = async (lat, lon) => {
   try {
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`,
       {
         headers: {
-          "User-Agent": "soil-nutrient-app/1.0 (your-email@example.com)",
+          "User-Agent": "soil-nutrient-app/1.0", // Simple user agent is fine
         },
       }
     );
@@ -40,7 +40,6 @@ const ReportCard = ({
   error,
 }) => {
   const [locationName, setLocationName] = useState(null);
-  const reportRef = useRef(null);
 
   useEffect(() => {
     if (location?.latitude && location?.longitude) {
@@ -50,22 +49,10 @@ const ReportCard = ({
     }
   }, [location]);
 
-  const handleDownloadPDF = () => {
-    if (reportRef.current) {
-      const options = {
-        margin: 0.5,
-        filename: `Soil_Report_${locationName || "location"}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
-      };
-      html2pdf().set(options).from(reportRef.current).save();
-    }
-  };
-
   return (
     <div className="bg-white/60 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/80 p-6">
-      <div className="flex justify-between mb-4 items-center">
+      {/* The header no longer needs justify-between since the button is gone */}
+      <div className="flex mb-4 items-center">
         <div className="flex items-center gap-3">
           <MapPinIcon className="h-8 w-8 text-brand-blue-600" />
           <div>
@@ -82,18 +69,11 @@ const ReportCard = ({
             </p>
           </div>
         </div>
-        <button
-          onClick={handleDownloadPDF}
-          disabled={isProcessing}
-          className="bg-brand-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-brand-blue-700 disabled:bg-brand-blue-300 disabled:cursor-not-allowed"
-        >
-          Download PDF
-        </button>
+        {/* The Download PDF button has been removed from here */}
       </div>
 
-      <div ref={reportRef}>
-        {/* --- CHANGE IS HERE --- */}
-        {/* We now use a ternary operator to show a loading state OR the results */}
+      <div>
+        {/* The ref for the PDF download has been removed from this div */}
         {isProcessing ? (
           <div className="flex flex-col items-center justify-center text-center p-8 bg-gray-50/50 rounded-md my-4">
             <ArrowPathIcon className="h-8 w-8 text-brand-blue-500 animate-spin mb-3" />
