@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { AVAILABLE_NUTRIENTS, Nutrient } from "./constants.jsx";
-import { getAiRecommendation } from "./services/geminiService.js";
+// import { getAiRecommendation } from "./services/geminiService.js"; // AI import removed
 import { runPrediction } from "./services/modelService.js";
 import { getStatusForValue, parseCsv } from "./lib/utils.js";
 import { fetchSentinel2Data } from "./services/earthEngineService.js";
@@ -124,23 +124,15 @@ const App = () => {
             return { nutrient, value, status, recommendation: "" };
           });
 
-          const finalPredictions = await Promise.all(
-            predictions.map((p) =>
-              getAiRecommendation(p.nutrient, p.value, p.status).then(
-                (rec) => ({
-                  ...p,
-                  recommendation: rec,
-                })
-              )
-            )
-          );
+          // --- AI RECOMMENDATION BLOCK REMOVED ---
+          // The `predictions` array is now the final data.
 
           setReports((prev) =>
             prev.map((r, idx) =>
               i === idx
                 ? {
                     ...r,
-                    predictions: finalPredictions,
+                    predictions: predictions, // Use predictions directly
                     isProcessing: false,
                     ndviData: ndviData,
                   }
@@ -322,7 +314,7 @@ const App = () => {
                         Analyzing...
                       </>
                     ) : (
-                      "🔍 Predict & Advise"
+                      "🔍 Get Predictions"
                     )}
                   </button>
                 </div>
@@ -385,8 +377,8 @@ const App = () => {
             </h1>
           </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Upload a CSV or provide your location to get instant predictions and
-            AI-powered recommendations for a healthier harvest.
+            Upload a CSV or provide your location to get instant soil nutrient
+            predictions for a healthier harvest.
           </p>
         </header>
 
