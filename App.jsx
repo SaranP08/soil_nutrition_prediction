@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from "react";
-// AFTER (This is the fix)
 import { AVAILABLE_NUTRIENTS, Nutrient } from "./constants.jsx";
 import { runPrediction } from "./services/modelService.js";
 import { getStatusForValue, parseCsv } from "./lib/utils.js";
@@ -83,7 +82,6 @@ const App = () => {
           nutrient,
           value: 0,
           status: "low",
-          recommendation: "",
         })),
         isProcessing: true,
       }));
@@ -121,8 +119,8 @@ const App = () => {
           const predictions = selectedNutrients.map((nutrient) => {
             const value = values[nutrient];
             const status = getStatusForValue(nutrient, value);
-            // Recommendation is kept as an empty string, AI call is removed.
-            return { nutrient, value, status, recommendation: "" };
+            // AI recommendation generation has been removed.
+            return { nutrient, value, status };
           });
 
           // The block for getAiRecommendation was here and has been removed.
