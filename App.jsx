@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
-import { AVAILABLE_NUTRIENTS, Nutrient } from "./constants.jsx";
+import { AVAILABLE_NUTRIENTS, Nutrient } from "./constants.js";
+import { getAiRecommendation } from "./services/geminiService.js";
 import { runPrediction } from "./services/modelService.js";
 import { getStatusForValue, parseCsv } from "./lib/utils.js";
 import { fetchSentinel2Data } from "./services/earthEngineService.js";
@@ -82,6 +83,7 @@ const App = () => {
           nutrient,
           value: 0,
           status: "low",
+          recommendation: "",
         })),
         isProcessing: true,
       }));
@@ -119,19 +121,26 @@ const App = () => {
           const predictions = selectedNutrients.map((nutrient) => {
             const value = values[nutrient];
             const status = getStatusForValue(nutrient, value);
-            // AI recommendation generation has been removed.
-            return { nutrient, value, status };
+            return { nutrient, value, status, recommendation: "" };
           });
 
-          // The block for getAiRecommendation was here and has been removed.
-          // We will now use the `predictions` array directly.
+          const finalPredictions = await Promise.all(
+            predictions.map((p) =>
+              getAiRecommendation(p.nutrient, p.value, p.status).then(
+                (rec) => ({
+                  ...p,
+                  recommendation: rec,
+                })
+              )
+            )
+          );
 
           setReports((prev) =>
             prev.map((r, idx) =>
               i === idx
                 ? {
                     ...r,
-                    predictions: predictions, // Use predictions directly without AI recommendations
+                    predictions: finalPredictions,
                     isProcessing: false,
                     ndviData: ndviData,
                   }
